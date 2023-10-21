@@ -1,2 +1,6 @@
 pandas
 seaborn
+gensim
+nltk
+torch
+lightning
