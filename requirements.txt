@@ -2,6 +2,5 @@ pandas
 seaborn
 gensim
 nltk
-pytorch
 lightning
 addict

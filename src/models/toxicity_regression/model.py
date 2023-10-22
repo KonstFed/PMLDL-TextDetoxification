@@ -12,7 +12,10 @@ class SimpleToxicClassification(pl.LightningModule):
         super().__init__()
         self.linear = nn.Sequential(nn.Linear(input_dim, 300), nn.ReLU())
         self.classification = nn.Sequential(
-            nn.Linear(300, 100), nn.ReLU(), nn.Linear(100, 1), nn.Sigmoid()
+            nn.Linear(300, 100), 
+            nn.ReLU(), 
+            nn.Linear(100, 1), 
+            nn.Sigmoid()
         )
         loss_params = {i: loss_args[i] for i in loss_args if i not in ["name"]}
         self.loss = eval(f"nn.{loss_args.name}", {"nn": nn})(**loss_params)
@@ -54,7 +57,7 @@ class SimpleToxicClassification(pl.LightningModule):
         loss = self._count_loss(batch)
         
         self.log(
-            "val loss", loss, on_step=True, on_epoch=True, prog_bar=True, logger=True, batch_size=len(batch)
+            "val loss", loss, on_step=False, on_epoch=True, prog_bar=True, logger=True, batch_size=len(batch)
         )
         return loss
     

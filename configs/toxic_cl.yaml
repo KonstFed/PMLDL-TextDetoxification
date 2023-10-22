@@ -1,9 +1,9 @@
 data:
-  train_val_test_ratio: [0.005, 0.005, 0.99]
+  train_val_test_ratio: [0.6, 0.2, 0.2]
   dataset: 
     name: ToxicityLevelDataset
     load_path: "models/preprocessing/toxic_dataset"
-    # save_path: "models/preprocessing/toxic_dataset"
+#     save_path: "models/preprocessing/toxic_dataset"
     data_path: "data/filtered.tsv"
     nltk_args:
       num_workers: 4
@@ -14,7 +14,7 @@ data:
       sg: 0
     verbose: true
   dataloader:
-    batch_size: 32
+    batch_size: 64
     num_workers: 7
 model:
   name: SimpleToxicClassification
@@ -26,6 +26,6 @@ training:
     name: torch.optim.Adam
     lr: 0.01
   trainer_args:
-    max_epochs: 1
+    max_epochs: 100
     default_root_dir: "models/toxicity_cl/v1"
 
