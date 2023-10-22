@@ -21,7 +21,7 @@ def _download_if_non_existent(res_path, res_name):
 class NLTK_tokenizer:
     def __init__(self, num_workers: int = 1) -> None:
         _download_if_non_existent("corpora/stopwords", "stopwords")
-        self.rm_symb_pattern_ = r"[();.\/\\$%,!&?*]"
+        self.rm_symb_pattern_ = r"[();.\/\\$%,!&?*']"
         self.stopwords = stopwords.words("english")
         self._stemmer = PorterStemmer()
         self.num_workers = num_workers
@@ -30,7 +30,7 @@ class NLTK_tokenizer:
         row: str = re.sub(self.rm_symb_pattern_, " ", sentence)
         row = re.sub(r" +", " ", row).strip()
         tokens = row.split(" ")
-        # tokens = list(filter(lambda x: x not in self.stopwords, tokens))
+        tokens = list(filter(lambda x: x not in self.stopwords, tokens))
         tokens = list(map(self._stemmer.stem, tokens))
         return tokens
 
@@ -40,6 +40,7 @@ class NLTK_tokenizer:
                 out = list(tqdm(p.imap(self._tokenize_sentence, data), total=len(data)))
             else:
                 out = list(p.imap(self._tokenize_sentence, data))
+        
         return out
 
 

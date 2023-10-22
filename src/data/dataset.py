@@ -1,10 +1,13 @@
 import csv
 import pickle
+from collections import Counter
 
 from torch.utils.data import Dataset
 from preprocessing.tokenizers import NLTK_tokenizer
 from preprocessing.vocabulars import get_word2vec
 import gensim
+import numpy as np
+from tqdm import tqdm
 
 
 class CachedDataset:
@@ -95,6 +98,78 @@ class ToxicityLevelDataset(CSVDataset, CachedDataset):
         with open(path + "/texts.obj", "rb") as f:
             self._tokenized_texts, self._toxic_level = pickle.load(f)
         self.to_emb = gensim.models.Word2Vec.load(path + "/word2vec.model")
+        return self
+
+
+class BoWDataset(CSVDataset, CachedDataset):
+    def __init__(self, data_path: str, nltk_args, size: int, minimum_freq: int = 100,verbose=True) -> None:
+        super().__init__(data_path)
+        self.size = size
+        self.minimum_freq = minimum_freq
+        self._toxic_level = []
+        self._texts = []
+        for data_row in self._data:
+            self._toxic_level.append(float(data_row[3]))
+            self._texts.append(data_row[0])
+            self._toxic_level.append(float(data_row[4]))
+            self._texts.append(data_row[1])
+
+        nltk = NLTK_tokenizer(**nltk_args)
+        self._tokenized_texts = nltk.forward(self._texts, verbose=verbose)
+        self.data = list(
+            filter(
+                lambda x: len(x[0]) > 0, zip(self._tokenized_texts, self._toxic_level)
+            )
+        )
+        self._build_bow(verbose)
+
+    def _build_bow(self, verbose: bool):
+        values = {}
+        if verbose:
+            bar = tqdm(self.data)
+        else:
+            bar = self.data
+        for sentence, toxic_level in bar:
+            for word in sentence:
+                if word in values:
+                    avg, n = values[word]
+                    values[word] = ((avg * n + toxic_level) / (n + 1), n + 1)
+                else:
+                    values[word] = (toxic_level, 1)
+        values = filter(lambda x: x[1][1] > self.minimum_freq, values.items())
+        values = sorted(values, key=lambda x: x[1][0], reverse=True)[: self.size]
+        print(values)
+        self.bow = {word: idx for idx, (word, _) in enumerate(values)}
+        print(self.bow)
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, index):
+        vector_sentence = np.zeros(self.size, dtype=np.int64)
+        for word in self.data[index][0]:
+            idx = self.bow.get(word, -1)
+            if idx != -1:
+                vector_sentence[idx] = 1
+        return vector_sentence, self.data[index][1]
+
+    def save(self, path) -> None:
+        with open(f"{path}/tokenized_texts_labels.obj", "wb") as f:
+            pickle.dump(self.data, f)
+
+        with open(f"{path}/bow.obj", "wb") as f:
+            pickle.dump(self.bow, f)
+
+    @classmethod
+    def load(cls, path):
+        self = cls.__new__(cls)
+        with open(path + "/tokenized_texts_labels.obj", "rb") as f:
+            self.data = pickle.load(f)
+
+        with open(path + "/bow.obj", "rb") as f:
+            self.bow = pickle.load(f)
+        self.size = len(self.bow.keys())
+        # self._build_bow()
         return self
 
 

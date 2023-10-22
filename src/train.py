@@ -9,6 +9,7 @@ import torch
 import random
 from addict import Dict
 import yaml
+from sklearn.linear_model import LogisticRegression
 
 from models import build_model
 from data.dataset import build_dataset
@@ -36,9 +37,8 @@ def get_args():
 def train(config):
     model = build_model(config.model, config.training)
     dataset = build_dataset(config.data.dataset)
-    dataset.save("models/preprocessing/toxic_dataset")
+    # dataset.save("models/preprocessing/toxic_dataset")
 
-    # dataset = ToxicityLevelDataset.load("models/preprocessing/toxic_dataset")
 
     train_data, val_data, test_data = random_split(
         dataset, config.data.train_val_test_ratio
@@ -62,7 +62,7 @@ def train(config):
         **config.data.dataloader
     )
     trainer = pl.Trainer(
-        callbacks=[EarlyStopping(monitor="val loss", mode="min")],
+        # callbacks=[EarlyStopping(monitor="val loss", mode="min")],
         **config.training.trainer_args
     )
     trainer.fit(model=model, train_dataloaders=train_loader, val_dataloaders=val_loader)

@@ -14,7 +14,7 @@ data:
       sg: 0
     verbose: true
   dataloader:
-    batch_size: 64
+    batch_size: 16
     num_workers: 7
 model:
   name: SimpleToxicClassification

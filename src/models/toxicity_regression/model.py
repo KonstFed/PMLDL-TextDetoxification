@@ -84,3 +84,51 @@ class SimpleToxicClassification(pl.LightningModule):
         offsets = torch.tensor(offsets, dtype=torch.long).cumsum(dim=0)
         labels = torch.tensor(labels).float()
         return texts, offsets, labels.view(*labels.shape, 1)
+
+class LogisticRegression(pl.LightningModule):
+    def __init__(self, input_dim: int, optimizer_args, **args) -> None:
+        super().__init__()
+        self._optimizer_args = optimizer_args
+        self.lr = nn.Sequential(
+            nn.Linear(input_dim, 100),
+            nn.ReLU(),
+            nn.Linear(100, 1)
+        )
+        self.sigmoid = nn.Sigmoid()
+        self.loss = nn.BCELoss()
+
+    def forward(self, input: torch.tensor) -> torch.tensor:
+        out = self.lr(input)
+        out = self.sigmoid(out)
+        return out
+    
+    def training_step(self, batch) -> STEP_OUTPUT:
+        input, labels = batch
+        out = self.forward(input)
+        loss = self.loss(out, labels)
+        return loss
+    
+    def test_step(self, batch) -> STEP_OUTPUT:
+        loss = self.training_step(batch)
+        self.log("test loss", loss, on_epoch=True)
+    
+    def validation_step(self, batch) -> STEP_OUTPUT:
+        loss = self.training_step(batch)
+        self.log("val loss", loss, on_epoch=True, prog_bar=True)
+    
+    def configure_optimizers(self):
+        optimizer_params = {i:self._optimizer_args[i] for i in self._optimizer_args if i not in ['name']}
+        optimizer = eval(f"{self._optimizer_args.name}")(self.parameters(), **optimizer_params)
+        return optimizer
+    
+    @staticmethod
+    def collate_batch(batch):
+        inp_vectors = []
+        labels = []
+        for inp_v, label in batch:
+            labels.append(label)
+            inp_v = torch.tensor(inp_v)
+            inp_vectors.append(inp_v.view(*inp_v.shape, 1))
+        inp_vectors = torch.cat(inp_vectors, dim=1).float().permute(1, 0)
+        labels = torch.tensor(labels, dtype=torch.float)
+        return inp_vectors, labels.view(*labels.shape, 1)
