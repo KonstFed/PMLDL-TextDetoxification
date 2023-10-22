@@ -6,6 +6,16 @@ from preprocessing.tokenizers import NLTK_tokenizer
 from preprocessing.vocabulars import get_word2vec
 import gensim
 
+
+class CachedDataset:
+    @classmethod
+    def load(path: str):
+        raise NotImplementedError
+
+    def save(self, path: str):
+        raise NotImplementedError
+
+
 class CSVDataset(Dataset):
     def __init__(self, data_path: str) -> None:
         self._data = []
@@ -30,16 +40,16 @@ class CSVDataset(Dataset):
     def __getitem__(self, index):
         # TODO
         return self._data[index]
-    
+
     def save(self, path) -> None:
         raise NotImplementedError
-    
+
     def load(self, path) -> None:
         raise NotImplementedError
 
 
-class ToxicityLevelDataset(CSVDataset):
-    def __init__(self, data_path: str, num_workers: int = 1, verbose=True,) -> None:
+class ToxicityLevelDataset(CSVDataset, CachedDataset):
+    def __init__(self, data_path: str, nltk_args, word2vec_args, verbose=True) -> None:
         """Dataset for predicting toxicity level of sentence for filtered.tsv data.
 
         Args:
@@ -55,12 +65,12 @@ class ToxicityLevelDataset(CSVDataset):
             self._toxic_level.append(float(data_row[4]))
             self._texts.append(data_row[1])
 
-        self.tokenizer = NLTK_tokenizer(num_workers=num_workers)
+        self.tokenizer = NLTK_tokenizer(**nltk_args)
         self._tokenized_texts = self.tokenizer.forward(self._texts, verbose=verbose)
-        
+
         if verbose:
             print("Begin training of Word2vec")
-        self.to_emb = get_word2vec(self._tokenized_texts)
+        self.to_emb = get_word2vec(self._tokenized_texts, args=word2vec_args)
         if verbose:
             print("Done training Word2vec")
         # for sentence in tokenized_texts:
@@ -72,7 +82,7 @@ class ToxicityLevelDataset(CSVDataset):
 
     def __len__(self):
         return len(self._toxic_level)
-    
+
     def save(self, path) -> None:
         data2save = (self._tokenized_texts, self._toxic_level)
         with open(path + "/texts.obj", "wb") as f:
@@ -86,6 +96,22 @@ class ToxicityLevelDataset(CSVDataset):
             self._tokenized_texts, self._toxic_level = pickle.load(f)
         self.to_emb = gensim.models.Word2Vec.load(path + "/word2vec.model")
         return self
+
+
+def build_dataset(dataset_config: dict):
+    if "load_path" in dataset_config:
+        dataset = eval(f"{dataset_config.name}.load")(dataset_config.load_path)
+    else:
+        dataset_params = {
+            i: dataset_config[i]
+            for i in dataset_config
+            if i not in ["name", "save_path"]
+        }
+        dataset: CachedDataset = eval(f"{dataset_config.name}")(**dataset_params)
+        if "save_path" in dataset_config:
+            dataset.save(dataset_config.save_path)
+    return dataset
+
 
 if __name__ == "__main__":
     dataset = CSVDataset("data/filtered.tsv")

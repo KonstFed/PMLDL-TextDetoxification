@@ -2,5 +2,6 @@ pandas
 seaborn
 gensim
 nltk
-torch
+pytorch
 lightning
+addict
