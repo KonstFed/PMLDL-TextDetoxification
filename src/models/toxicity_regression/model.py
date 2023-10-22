@@ -21,27 +21,25 @@ class SimpleToxicClassification(pl.LightningModule):
         self.loss = eval(f"nn.{loss_args.name}", {"nn": nn})(**loss_params)
         self._optimizer_args = optimizer_args
 
-    def forward(self, input: list[torch.tensor]) -> torch.tensor:
-        sentences_batch = input
-        out = []
-        for sentence in sentences_batch:
-            embds = self.linear(sentence)
-            emb = embds.mean(axis=0)
-            out.append(emb.view(*emb.shape, 1))
-
-        out = torch.cat(out, dim=1).permute(1, 0)
+    def forward(self, input: torch.tensor, offsets) -> torch.tensor:
+        out = self.linear(input)
+        per_batch = []
+        for i in range(len(offsets)):   
+            per_batch.append(out[offsets[i]:offsets[i+1]].mean())
+        out = torch.per_batch(out, dim=1).permute(1, 0)
         out = self.classification(out)
         return out
     
     def _count_loss(self, batch):
-        sentences_batch, label = batch
-        out = []
-        for sentence in sentences_batch:
-            embds = self.linear(sentence)
-            emb = embds.mean(axis=0)
-            out.append(emb.view(*emb.shape, 1))
+        sentences_batch, offsets, label = batch
+        out = self.linear(sentences_batch)
+        
+        per_batch = []
+        for i in range(len(offsets)-1):
+            _c = out[offsets[i]:offsets[i+1]].mean(dim=0)
+            per_batch.append(_c.view(*_c.shape, 1))
 
-        out = torch.cat(out, dim=1).permute(1, 0)
+        out = torch.cat(per_batch, dim=1).permute(1, 0)
         out = self.classification(out)
         loss = self.loss(out, label)
         return loss
@@ -75,12 +73,14 @@ class SimpleToxicClassification(pl.LightningModule):
     def collate_batch(batch):
         texts = []
         labels = []
+        offsets = [0]
         for sentence, label in batch:
-            if np.array(sentence).shape[0] == 0:
-                print("DDD")
             sentence = torch.tensor(np.array(sentence), dtype=torch.float32)
             texts.append(sentence)
+            offsets.append(sentence.size(0))
             labels.append(label)
-
+        
+        texts = torch.cat(texts)
+        offsets = torch.tensor(offsets, dtype=torch.long).cumsum(dim=0)
         labels = torch.tensor(labels).float()
-        return texts, labels.view(*labels.shape, 1)
+        return texts, offsets, labels.view(*labels.shape, 1)
