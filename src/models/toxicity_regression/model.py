@@ -90,9 +90,11 @@ class LogisticRegression(pl.LightningModule):
         super().__init__()
         self._optimizer_args = optimizer_args
         self.lr = nn.Sequential(
-            nn.Linear(input_dim, 100),
+            nn.Linear(input_dim, 4000),
             nn.ReLU(),
-            nn.Linear(100, 1)
+            nn.Linear(4000, 1000),
+            nn.ReLU(),
+            nn.Linear(1000, 1)
         )
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCELoss()

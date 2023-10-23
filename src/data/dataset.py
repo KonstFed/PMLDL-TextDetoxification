@@ -1,3 +1,4 @@
+import os
 import csv
 import pickle
 from collections import Counter
@@ -138,9 +139,7 @@ class BoWDataset(CSVDataset, CachedDataset):
                     values[word] = (toxic_level, 1)
         values = filter(lambda x: x[1][1] > self.minimum_freq, values.items())
         values = sorted(values, key=lambda x: x[1][0], reverse=True)[: self.size]
-        print(values)
         self.bow = {word: idx for idx, (word, _) in enumerate(values)}
-        print(self.bow)
 
     def __len__(self):
         return len(self.data)
@@ -184,6 +183,7 @@ def build_dataset(dataset_config: dict):
         }
         dataset: CachedDataset = eval(f"{dataset_config.name}")(**dataset_params)
         if "save_path" in dataset_config:
+            os.makedirs(dataset_config.save_path, exist_ok=True)
             dataset.save(dataset_config.save_path)
     return dataset
 
