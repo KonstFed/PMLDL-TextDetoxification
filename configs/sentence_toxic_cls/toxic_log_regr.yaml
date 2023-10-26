@@ -3,12 +3,13 @@ preprocessing:
     name: NLTK_tokenizer
     num_workers: 8
   text2vector:
-    save_path: models/preprocessing/bow.obj
+    load_path: models/preprocessing/bow.obj
     name: WeightedBow
     minimum_freq: 100
     size: 2000
     verbose: True
 model:
+  # checkpoint_path: models/toxicity_log_regr/best.ckpt
   name: LogisticRegression
   input_dim: 2000
 training:

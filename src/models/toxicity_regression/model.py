@@ -124,6 +124,7 @@ class LogisticRegression(pl.LightningModule):
             nn.ReLU(),
             nn.Linear(1000, 1),
         )
+        self.save_hyperparameters()
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCELoss()
 

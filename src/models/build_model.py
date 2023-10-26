@@ -1,8 +1,8 @@
 from .toxicity_regression.model import *
 
 def build_model(model_config: dict, training_config: dict):
-    if model_config.get("load_path", None) is not None:
-        model = eval(f"{model_config.name}").load_from_checkpoint(model_config.load_path)
+    if model_config.get("checkpoint_path", None) is not None:
+        model = eval(f"{model_config.name}").load_from_checkpoint(model_config.checkpoint_path)
     else:
         model_params = {i:model_config[i] for i in model_config if i not in ['name']}
         model = eval(f"{model_config.name}")(**model_params, **training_config)
