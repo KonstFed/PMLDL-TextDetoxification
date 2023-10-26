@@ -118,9 +118,6 @@ class ToxicityLevelDataset(CSVDataset):
 
     def __getitem__(self, index):
         vector_form = self.text2vec.forward(self._tokenized_texts[index])
-        norm = np.linalg.norm(vector_form)
-        if norm != 0:
-            vector_form /= norm
         return vector_form, self._toxic_level[index]
 
 

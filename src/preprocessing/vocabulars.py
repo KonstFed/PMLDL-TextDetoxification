@@ -69,6 +69,9 @@ class BoW(Text2Vector):
             idx = self.mapping.get(word, -1)
             if idx != -1:
                 out[idx] += 1
+        norm = np.linalg.norm(out)
+        if norm != 0:
+            out = out / norm
         return out
 
 

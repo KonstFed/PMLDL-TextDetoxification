@@ -1,9 +1,13 @@
 from .toxicity_regression.model import *
 
 def build_model(model_config: dict, training_config: dict):
-    model_params = {i:model_config[i] for i in model_config if i not in ['name']}
-    model = eval(f"{model_config.name}")(**model_params, **training_config)
+    if model_config.get("load_path", None) is not None:
+        model = eval(f"{model_config.name}").load_from_checkpoint(model_config.load_path)
+    else:
+        model_params = {i:model_config[i] for i in model_config if i not in ['name']}
+        model = eval(f"{model_config.name}")(**model_params, **training_config)
     return model
+
 
 
 def load_model(model_config: dict, path: str):

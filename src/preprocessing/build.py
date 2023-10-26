@@ -6,7 +6,7 @@ def _build(local_conifg):
     object = eval(local_conifg.name)(**params)
     return object
 
-def build_preprocessing(preprocessing_config: dict):
+def build_preprocessing(preprocessing_config: dict) -> tuple[Tokenizer, Text2Vector]:
     tokenizer = _build(preprocessing_config.tokenizer)
     text2vector: Text2Vector = _build(preprocessing_config.text2vector)
     if preprocessing_config.text2vector.get("load_path", None) is not None:
