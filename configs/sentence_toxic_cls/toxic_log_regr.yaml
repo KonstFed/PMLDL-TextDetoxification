@@ -15,9 +15,10 @@ training:
   train_val_test_ratio: [0.6, 0.2, 0.2]
   seed: 4000
   dataset: 
-    name: ToxicityLevelDataset
+    name: BinaryToxicityLevelDataset
     data_path: "data/filtered.tsv"
     verbose: true
+    threshold: 0.5
   dataloader:
     batch_size: 64
     num_workers: 7

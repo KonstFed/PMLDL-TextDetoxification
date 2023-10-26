@@ -3,6 +3,7 @@ from lightning.pytorch.utilities.types import STEP_OUTPUT
 import torch
 from torch import nn
 import numpy as np
+from sklearn.metrics import accuracy_score
 
 import lightning.pytorch as pl
 
@@ -43,12 +44,33 @@ class SimpleToxicClassification(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         loss = self._count_loss(batch)
-        self.log("train_loss", loss, prog_bar=True, batch_size=len(batch))
+        self.log("train_loss", loss, on_epoch=True, prog_bar=True, batch_size=len(batch))
         return loss
 
     def validation_step(self, batch, batch_idx) -> STEP_OUTPUT:
-        loss = self._count_loss(batch)
+        sentences_batch, offsets, label = batch
+        out = self.linear(sentences_batch)
 
+        per_batch = []
+        for i in range(len(offsets) - 1):
+            _c = out[offsets[i] : offsets[i + 1]].mean(dim=0)
+            per_batch.append(_c.view(*_c.shape, 1))
+
+        out = torch.cat(per_batch, dim=1).permute(1, 0)
+        out: torch.Tensor = self.classification(out)
+        loss = self.loss(out, label)
+
+        binary_labels = label > 0.5
+        accuracy = accuracy_score(binary_labels, out.detach() > 0.5)
+        self.log(
+            "accuracy",
+            accuracy,
+            on_epoch=True,
+            prog_bar=True,
+            logger=True,
+            batch_size=len(batch),
+
+        )
         self.log(
             "val loss",
             loss,

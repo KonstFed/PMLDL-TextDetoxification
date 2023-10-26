@@ -108,7 +108,7 @@ class ToxicityLevelDataset(CSVDataset):
             if len(texts[i]) > 0:
                 self._toxic_level.append(_toxic_level[i])
                 self._tokenized_texts.append(texts[i])
-        
+
         self.text2vec = text2vec
         if not self.text2vec.ready:
             self.text2vec.build(self._tokenized_texts, self._toxic_level)
@@ -121,16 +121,31 @@ class ToxicityLevelDataset(CSVDataset):
         return vector_form, self._toxic_level[index]
 
 
+class BinaryToxicityLevelDataset(ToxicityLevelDataset):
+    def __init__(
+        self,
+        data_path: str,
+        tokenizer: Tokenizer,
+        text2vec: Text2Vector,
+        threshold: float,
+        verbose=True,
+    ) -> None:
+        super().__init__(data_path, tokenizer, text2vec, verbose)
+        self.threshold = threshold
+
+    def __getitem__(self, index):
+        vector, toxic_level = super().__getitem__(index)
+        return vector, int(toxic_level > self.threshold)
+
+
 def build_dataset(dataset_config: dict, tokenizer: Tokenizer, text2vec: Text2Vector):
     dataset_params = {
-        i: dataset_config[i]
-        for i in dataset_config
-        if i not in ["name", "save_path"]
+        i: dataset_config[i] for i in dataset_config if i not in ["name", "save_path"]
     }
     dataset = eval(f"{dataset_config.name}")(
         tokenizer=tokenizer, text2vec=text2vec, **dataset_params
     )
-    
+
     return dataset
 
 
