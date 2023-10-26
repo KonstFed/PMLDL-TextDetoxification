@@ -1,11 +1,13 @@
 preprocessing:
   tokenizer:
     name: NLTK_tokenizer
-    num_workers: 6
+    num_workers: 8
   text2vector:
     save_path: models/preprocessing/bow.obj
     name: WeightedBow
+    minimum_freq: 100
     size: 4000
+    verbose: True
 model:
   name: LogisticRegression
   input_dim: 4000

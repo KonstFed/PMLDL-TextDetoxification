@@ -93,15 +93,22 @@ class ToxicityLevelDataset(CSVDataset):
         self, data_path: str, tokenizer: Tokenizer, text2vec: Text2Vector, verbose=True
     ) -> None:
         super().__init__(data_path)
-        self._toxic_level = []
+        _toxic_level = []
         self._texts = []
         for data_row in self._data:
-            self._toxic_level.append(float(data_row[3]))
+            _toxic_level.append(float(data_row[3]))
             self._texts.append(data_row[0])
-            self._toxic_level.append(float(data_row[4]))
+            _toxic_level.append(float(data_row[4]))
             self._texts.append(data_row[1])
 
-        self._tokenized_texts = tokenizer.forward(self._texts, verbose=verbose)
+        texts = tokenizer.forward(self._texts, verbose=verbose)
+        self._tokenized_texts = []
+        self._toxic_level = []
+        for i in range(len(texts)):
+            if len(texts[i]) > 0:
+                self._toxic_level.append(_toxic_level[i])
+                self._tokenized_texts.append(texts[i])
+        
         self.text2vec = text2vec
         if not self.text2vec.ready:
             self.text2vec.build(self._tokenized_texts, self._toxic_level)
@@ -111,6 +118,9 @@ class ToxicityLevelDataset(CSVDataset):
 
     def __getitem__(self, index):
         vector_form = self.text2vec.forward(self._tokenized_texts[index])
+        norm = np.linalg.norm(vector_form)
+        if norm != 0:
+            vector_form /= norm
         return vector_form, self._toxic_level[index]
 
 

@@ -35,6 +35,8 @@ def get_args():
 
 
 def train(config):
+    # torch.set_float32_matmul_precision('medium' | 'high')
+    set_seed(config.training.seed)
     model = build_model(config.model, config.training)
     tokenizer, text2vec = build_preprocessing(config.preprocessing)
     dataset = build_dataset(config.training.dataset, tokenizer, text2vec)
