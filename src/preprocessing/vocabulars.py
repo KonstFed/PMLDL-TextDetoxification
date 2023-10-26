@@ -73,6 +73,17 @@ class BoW(Text2Vector):
 
 
 class WeightedBow(BoW):
+    def __init__(
+        self,
+        minimum_freq: int,
+        size: int,
+        load_path: str = None,
+        save_path: str = None,
+        verbose=False,
+    ) -> None:
+        super().__init__(size, load_path, save_path, verbose)
+        self.minimum_freq = minimum_freq
+
     def build(self, data: list[list[str]], labels: list[float]) -> None:
         avg_label = {}
         for i, sentence in enumerate(data):
@@ -83,8 +94,11 @@ class WeightedBow(BoW):
                 else:
                     avg_label[word] = (labels[i], 1)
 
-        t = list(avg_label.items())
-        t.sort(key=lambda x: x[0], reverse=True)
+        t = list(filter(lambda x: x[1][1] > self.minimum_freq, list(avg_label.items())))
+        
+        if len(t) < self.size:
+            raise ValueError(f"With minimum frequency {self.minimum_freq}, not enough elements left to form {self.size} output vector.")
+        t = sorted(t, key=lambda x: x[1][0], reverse=True)
         self.mapping = {x[0]: idx for idx, x in enumerate(t[: self.size])}
         if self.save_path is not None:
             self.save(self.save_path)
