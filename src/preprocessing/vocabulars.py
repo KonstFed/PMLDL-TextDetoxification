@@ -5,6 +5,7 @@ from gensim.models import Word2Vec
 
 from .utils import Cached
 
+
 def get_word2vec(texts: list[list[str]], args=None):
     if args is None:
         args = {"min_count": 1, "vector_size": 500, "window": 5, "sg": 0}
@@ -18,12 +19,13 @@ def get_word2vec(texts: list[list[str]], args=None):
 
 class Text2Vector(Cached):
     ready = False
+
     def __init__(self, load_path: str = None, save_path: str = None) -> None:
         if load_path is not None:
             self = Text2Vector.load(load_path)
         self.save_path = save_path
 
-    def build(self, data) -> None:
+    def build(self, data: list[list[str]], labels: list[float]) -> None:
         self.ready = True
         self.save(self.save_path)
 
@@ -39,13 +41,16 @@ class Text2Vector(Cached):
 
 
 class BoW(Text2Vector):
-    def __init__(self, size: int, load_path: str = None, save_path: str = None) -> None:
+    def __init__(
+        self, size: int, load_path: str = None, save_path: str = None, verbose=False
+    ) -> None:
         super().__init__(load_path, save_path)
         self.size = size
         self.counter = Counter()
+        self._verbose = verbose
 
-    def build(self, data: list[list[str]]) -> None:
-        for sentence in data:
+    def build(self, data: list[list[str]], labels: list[float]) -> None:
+        for i, sentence in enumerate(data):
             for word in sentence:
                 self.counter[word] += 1
 
@@ -54,7 +59,10 @@ class BoW(Text2Vector):
         if self.save_path is not None:
             self.save(self.save_path)
         self.ready = True
-    
+
+        if self._verbose:
+            print(t[:100])
+
     def forward(self, text: list[str]) -> np.ndarray:
         out = np.zeros(self.size)
         for word in text:
@@ -62,3 +70,25 @@ class BoW(Text2Vector):
             if idx != -1:
                 out[idx] += 1
         return out
+
+
+class WeightedBow(BoW):
+    def build(self, data: list[list[str]], labels: list[float]) -> None:
+        avg_label = {}
+        for i, sentence in enumerate(data):
+            for word in sentence:
+                if word in avg_label:
+                    mean, n = avg_label[word]
+                    avg_label[word] = ((mean * n + labels[i]) / (n + 1), n + 1)
+                else:
+                    avg_label[word] = (labels[i], 1)
+
+        t = list(avg_label.items())
+        t.sort(key=lambda x: x[0], reverse=True)
+        self.mapping = {x[0]: idx for idx, x in enumerate(t[: self.size])}
+        if self.save_path is not None:
+            self.save(self.save_path)
+
+        if self._verbose:
+            print(t[:100])
+        self.ready = True

@@ -104,7 +104,7 @@ class ToxicityLevelDataset(CSVDataset):
         self._tokenized_texts = tokenizer.forward(self._texts, verbose=verbose)
         self.text2vec = text2vec
         if not self.text2vec.ready:
-            self.text2vec.build(self._tokenized_texts)
+            self.text2vec.build(self._tokenized_texts, self._toxic_level)
 
     def __len__(self):
         return len(self._tokenized_texts)

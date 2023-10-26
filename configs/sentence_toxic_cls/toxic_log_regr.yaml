@@ -3,8 +3,8 @@ preprocessing:
     name: NLTK_tokenizer
     num_workers: 6
   text2vector:
-    load_path: models/preprocessing/bow.obj
-    name: BoW
+    save_path: models/preprocessing/bow.obj
+    name: WeightedBow
     size: 4000
 model:
   name: LogisticRegression
