@@ -6,11 +6,11 @@ preprocessing:
     save_path: models/preprocessing/bow.obj
     name: WeightedBow
     minimum_freq: 100
-    size: 4000
+    size: 2000
     verbose: True
 model:
   name: LogisticRegression
-  input_dim: 4000
+  input_dim: 2000
 training:
   train_val_test_ratio: [0.6, 0.2, 0.2]
   seed: 4000
