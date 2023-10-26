@@ -3,21 +3,13 @@ import csv
 import pickle
 from collections import Counter
 
-from torch.utils.data import Dataset
-from preprocessing.tokenizers import NLTK_tokenizer
-from preprocessing.vocabulars import get_word2vec
 import gensim
 import numpy as np
 from tqdm import tqdm
 
-
-class CachedDataset:
-    @classmethod
-    def load(path: str):
-        raise NotImplementedError
-
-    def save(self, path: str):
-        raise NotImplementedError
+from torch.utils.data import Dataset
+from preprocessing.tokenizers import NLTK_tokenizer, Tokenizer
+from preprocessing.vocabulars import get_word2vec, Text2Vector
 
 
 class CSVDataset(Dataset):
@@ -45,14 +37,8 @@ class CSVDataset(Dataset):
         # TODO
         return self._data[index]
 
-    def save(self, path) -> None:
-        raise NotImplementedError
 
-    def load(self, path) -> None:
-        raise NotImplementedError
-
-
-class ToxicityLevelDataset(CSVDataset, CachedDataset):
+class _ToxicityLevelDataset(CSVDataset):
     def __init__(self, data_path: str, nltk_args, word2vec_args, verbose=True) -> None:
         """Dataset for predicting toxicity level of sentence for filtered.tsv data.
 
@@ -102,11 +88,11 @@ class ToxicityLevelDataset(CSVDataset, CachedDataset):
         return self
 
 
-class BoWDataset(CSVDataset, CachedDataset):
-    def __init__(self, data_path: str, nltk_args, size: int, minimum_freq: int = 100,verbose=True) -> None:
+class ToxicityLevelDataset(CSVDataset):
+    def __init__(
+        self, data_path: str, tokenizer: Tokenizer, text2vec: Text2Vector, verbose=True
+    ) -> None:
         super().__init__(data_path)
-        self.size = size
-        self.minimum_freq = minimum_freq
         self._toxic_level = []
         self._texts = []
         for data_row in self._data:
@@ -115,76 +101,29 @@ class BoWDataset(CSVDataset, CachedDataset):
             self._toxic_level.append(float(data_row[4]))
             self._texts.append(data_row[1])
 
-        nltk = NLTK_tokenizer(**nltk_args)
-        self._tokenized_texts = nltk.forward(self._texts, verbose=verbose)
-        self.data = list(
-            filter(
-                lambda x: len(x[0]) > 0, zip(self._tokenized_texts, self._toxic_level)
-            )
-        )
-        self._build_bow(verbose)
-
-    def _build_bow(self, verbose: bool):
-        values = {}
-        if verbose:
-            bar = tqdm(self.data)
-        else:
-            bar = self.data
-        for sentence, toxic_level in bar:
-            for word in sentence:
-                if word in values:
-                    avg, n = values[word]
-                    values[word] = ((avg * n + toxic_level) / (n + 1), n + 1)
-                else:
-                    values[word] = (toxic_level, 1)
-        values = filter(lambda x: x[1][1] > self.minimum_freq, values.items())
-        values = sorted(values, key=lambda x: x[1][0], reverse=True)[: self.size]
-        self.bow = {word: idx for idx, (word, _) in enumerate(values)}
+        self._tokenized_texts = tokenizer.forward(self._texts, verbose=verbose)
+        self.text2vec = text2vec
+        if not self.text2vec.ready:
+            self.text2vec.build(self._tokenized_texts)
 
     def __len__(self):
-        return len(self.data)
+        return len(self._tokenized_texts)
 
     def __getitem__(self, index):
-        vector_sentence = np.zeros(self.size, dtype=np.int64)
-        for word in self.data[index][0]:
-            idx = self.bow.get(word, -1)
-            if idx != -1:
-                vector_sentence[idx] = 1
-        return vector_sentence, self.data[index][1]
-
-    def save(self, path) -> None:
-        with open(f"{path}/tokenized_texts_labels.obj", "wb") as f:
-            pickle.dump(self.data, f)
-
-        with open(f"{path}/bow.obj", "wb") as f:
-            pickle.dump(self.bow, f)
-
-    @classmethod
-    def load(cls, path):
-        self = cls.__new__(cls)
-        with open(path + "/tokenized_texts_labels.obj", "rb") as f:
-            self.data = pickle.load(f)
-
-        with open(path + "/bow.obj", "rb") as f:
-            self.bow = pickle.load(f)
-        self.size = len(self.bow.keys())
-        # self._build_bow()
-        return self
+        vector_form = self.text2vec.forward(self._tokenized_texts[index])
+        return vector_form, self._toxic_level[index]
 
 
-def build_dataset(dataset_config: dict):
-    if "load_path" in dataset_config:
-        dataset = eval(f"{dataset_config.name}.load")(dataset_config.load_path)
-    else:
-        dataset_params = {
-            i: dataset_config[i]
-            for i in dataset_config
-            if i not in ["name", "save_path"]
-        }
-        dataset: CachedDataset = eval(f"{dataset_config.name}")(**dataset_params)
-        if "save_path" in dataset_config:
-            os.makedirs(dataset_config.save_path, exist_ok=True)
-            dataset.save(dataset_config.save_path)
+def build_dataset(dataset_config: dict, tokenizer: Tokenizer, text2vec: Text2Vector):
+    dataset_params = {
+        i: dataset_config[i]
+        for i in dataset_config
+        if i not in ["name", "save_path"]
+    }
+    dataset = eval(f"{dataset_config.name}")(
+        tokenizer=tokenizer, text2vec=text2vec, **dataset_params
+    )
+    
     return dataset
 
 

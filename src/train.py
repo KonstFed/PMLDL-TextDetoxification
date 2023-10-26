@@ -9,10 +9,10 @@ import torch
 import random
 from addict import Dict
 import yaml
-from sklearn.linear_model import LogisticRegression
 
 from models import build_model
 from data.dataset import build_dataset
+from preprocessing import build_preprocessing
 
 
 def set_seed(seed: int):
@@ -36,30 +36,31 @@ def get_args():
 
 def train(config):
     model = build_model(config.model, config.training)
-    dataset = build_dataset(config.data.dataset)
+    tokenizer, text2vec = build_preprocessing(config.preprocessing)
+    dataset = build_dataset(config.training.dataset, tokenizer, text2vec)
     # dataset.save("models/preprocessing/toxic_dataset")
 
 
     train_data, val_data, test_data = random_split(
-        dataset, config.data.train_val_test_ratio
+        dataset, config.training.train_val_test_ratio
     )
     train_loader = DataLoader(
         train_data,
         collate_fn=model.collate_batch,
         shuffle=True,
-        **config.data.dataloader
+        **config.training.dataloader
     )
     val_loader = DataLoader(
         val_data,
         collate_fn=model.collate_batch,
         shuffle=False,
-        **config.data.dataloader
+        **config.training.dataloader
     )
     test_loader = DataLoader(
         test_data,
         collate_fn=model.collate_batch,
         shuffle=False,
-        **config.data.dataloader
+        **config.training.dataloader
     )
     trainer = pl.Trainer(
         # callbacks=[EarlyStopping(monitor="val loss", mode="min")],

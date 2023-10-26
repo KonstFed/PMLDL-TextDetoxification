@@ -1,22 +1,24 @@
-data:
-  train_val_test_ratio: [0.6, 0.2, 0.2]
-  dataset: 
-    name: BoWDataset
-    load_path: "models/preprocessing/bow_dataset"
-#     save_path: "models/preprocessing/bow_dataset"
-    data_path: "data/filtered.tsv"
-    nltk_args:
-      num_workers: 15
+preprocessing:
+  tokenizer:
+    name: NLTK_tokenizer
+    num_workers: 6
+  text2vector:
+    load_path: models/preprocessing/bow.obj
+    name: BoW
     size: 4000
-    minimum_freq: 100
-    verbose: true
-  dataloader:
-    batch_size: 64
-    num_workers: 7
 model:
   name: LogisticRegression
   input_dim: 4000
 training:
+  train_val_test_ratio: [0.6, 0.2, 0.2]
+  seed: 4000
+  dataset: 
+    name: ToxicityLevelDataset
+    data_path: "data/filtered.tsv"
+    verbose: true
+  dataloader:
+    batch_size: 64
+    num_workers: 7
   optimizer_args:
     name: torch.optim.Adam
 #     lr: 0.1
