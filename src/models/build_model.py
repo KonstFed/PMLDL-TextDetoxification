@@ -1,4 +1,4 @@
-from .toxicity_regression.model import *
+from .toxicity_classification import *
 
 def build_model(model_config: dict, training_config: dict):
     if model_config.get("checkpoint_path", None) is not None:

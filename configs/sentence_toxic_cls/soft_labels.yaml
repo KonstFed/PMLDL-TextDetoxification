@@ -9,17 +9,16 @@ preprocessing:
     size: 2000
     verbose: True
 model:
-  # checkpoint_path: models/toxicity_log_regr/best.ckpt
+  checkpoint_path: models/toxicity_cl/best_soft.ckpt
   name: LogisticRegression
   input_dim: 2000
 training:
   train_val_test_ratio: [0.6, 0.2, 0.2]
   seed: 4000
   dataset: 
-    name: BinaryToxicityLevelDataset
+    name: ToxicityLevelDataset
     data_path: "data/filtered.tsv"
     verbose: true
-    threshold: 0.5
   dataloader:
     batch_size: 64
     num_workers: 7
