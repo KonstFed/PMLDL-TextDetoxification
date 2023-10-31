@@ -71,6 +71,8 @@ def train(config):
     trainer.fit(model=model, train_dataloaders=train_loader, val_dataloaders=val_loader)
     trainer.test(model, dataloaders=test_loader)
 
+    if "save_path" in config.training:
+        model.save(config.training.save_path)
 
 if __name__ == "__main__":
     config = get_args()

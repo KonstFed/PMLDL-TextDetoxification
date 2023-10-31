@@ -7,7 +7,7 @@ preprocessing:
     truncation: True
 model:
   name: DistilBert
-  checkpoint_path: models/toxicity_cl/best_bert.ckpt
+  pretrained_path: models/toxicity_cl/best_bert.ckpt
   num_labels: 1
   model_name: distilbert-base-uncased
 training:

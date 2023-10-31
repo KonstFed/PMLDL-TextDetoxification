@@ -118,7 +118,10 @@ class SimpleToxicClassification(pl.LightningModule):
 
 
 class LogisticRegression(pl.LightningModule):
-    def __init__(self, input_dim: int, optimizer_args, **args) -> None:
+    def __init__(self, input_dim: int, optimizer_args, pretrained_path = None, **args) -> None:
+        if pretrained_path is not None:
+            self = LogisticRegression.load_from_checkpoint(pretrained_path, input_dim=input_dim, optimizer_args=optimizer_args)
+            return
         super().__init__()
         self._optimizer_args = optimizer_args
         self.lr = nn.Sequential(
@@ -202,6 +205,9 @@ class DistilBert(pl.LightningModule):
         loss = outputs[0]
         self.log("val loss", loss, on_epoch=True, prog_bar=True)
         return loss
+    
+    def save(self, path):
+        self.model.save_pretrained(path)
 
     def test_step(self, batch):
         outputs = self.forward(batch)

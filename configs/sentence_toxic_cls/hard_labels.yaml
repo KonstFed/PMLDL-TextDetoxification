@@ -9,7 +9,7 @@ preprocessing:
     size: 2000
     verbose: True
 model:
-  checkpoint_path: models/toxicity_cl/best_hard.ckpt
+  pretrained_path: models/toxicity_cl/best_hard.ckpt
   name: LogisticRegression
   input_dim: 2000
 training:
