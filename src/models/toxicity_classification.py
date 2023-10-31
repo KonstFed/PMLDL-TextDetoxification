@@ -174,16 +174,22 @@ class LogisticRegression(pl.LightningModule):
 
 
 class DistilBert(pl.LightningModule):
-    def __init__(self, model_name: str, optimizer_args, num_labels, **args) -> None:
+    def __init__(self, model_name: str, optimizer_args, num_labels, pretrained_path: str = None,**args) -> None:
         super().__init__()
         self.save_hyperparameters()
         self._optimizer_args = optimizer_args
         # self.transformer_config = AutoConfig.from_pretrained(model_name, num_labels=1)
-        self.model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=num_labels)
+        if pretrained_path is None:
+            self.model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=num_labels)
+        else:
+            self.model = AutoModelForSequenceClassification.from_pretrained(pretrained_path, num_labels=num_labels)
 
     def forward(self, input) -> torch.tensor:
         # print(input)
         return self.model(**input)
+    
+    def save(self, path):
+        self.model.save_pretrained(path)
 
     def training_step(self, batch):
         outputs = self.forward(batch)

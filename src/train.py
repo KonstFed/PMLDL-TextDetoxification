@@ -65,7 +65,7 @@ def train(config):
         **config.training.dataloader
     )
     trainer = pl.Trainer(
-        # callbacks=[EarlyStopping(monitor="val loss", mode="min")],
+        callbacks=[EarlyStopping(monitor="val loss", mode="min")],
         **config.training.trainer_args
     )
     trainer.fit(model=model, train_dataloaders=train_loader, val_dataloaders=val_loader)

@@ -47,10 +47,27 @@ class ToxicClassificationPipeline:
         with torch.no_grad():
             input_vector = torch.tensor(input_vector, dtype=torch.float32)
             return self.model(input_vector).detach()
+        
 
+class BertPipeline:
+    def __init__(self, config) -> None:
+        self.tokenizer: Tokenizer = build_preprocessing(config.preprocessing)["tokenizer"]
+        self.model = build_model(config.model, config.training)
+        self.model.eval()
+
+    def forward(self, input: str) -> float:
+        tokens = self.tokenizer.forward([input])
+        tokens = {k:torch.tensor(v) for k, v in tokens.items()}
+
+        out = self.model(tokens)
+        p = torch.nn.functional.sigmoid(out["logits"].detach())
+        return p
 
 def inference(config, input: str):
-    pipeline = ToxicClassificationPipeline(config)
+    if config.model.name == "DistilBert":
+        pipeline = BertPipeline(config)
+    else:
+        pipeline = ToxicClassificationPipeline(config)
     return pipeline.forward(input)
     # preprocessing = build_preprocessing(config.preprocessing)
     # # text2vec = text2vec.load(config.preprocessing.text2vector.load_path)

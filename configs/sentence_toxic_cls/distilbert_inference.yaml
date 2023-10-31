@@ -1,0 +1,27 @@
+preprocessing:
+  tokenizer:
+    name: HugginFaceTokenizer
+    model_name: distilbert-base-uncased
+    # padding: max_length
+    # max_length: 32
+    truncation: True
+model:
+  name: DistilBert
+  checkpoint_path: models/toxicity_cl/best_bert.ckpt
+  num_labels: 1
+  model_name: distilbert-base-uncased
+training:
+  train_val_test_ratio: [0.7, 0.1, 0.2]
+  seed: 4000
+  dataset: 
+    name: TransfosrmerDataset
+    data_path: "data/filtered.tsv"
+  dataloader:
+    batch_size: 512
+    num_workers: 7
+  optimizer_args:
+    lr: 0.00005
+  trainer_args:
+    max_epochs: 2
+    default_root_dir: "models/toxicity_bert"
+
