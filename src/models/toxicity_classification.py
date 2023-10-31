@@ -212,7 +212,7 @@ class DistilBert(pl.LightningModule):
     def test_step(self, batch):
         outputs = self.forward(batch)
         loss = outputs[0]
-        self.log("test_loss", on_epoch=True, prog_bar=True)
+        self.log("test_loss", loss, on_epoch=True, prog_bar=True)
         return loss
 
     def configure_optimizers(self):
