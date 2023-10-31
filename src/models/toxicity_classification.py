@@ -119,9 +119,6 @@ class SimpleToxicClassification(pl.LightningModule):
 
 class LogisticRegression(pl.LightningModule):
     def __init__(self, input_dim: int, optimizer_args, pretrained_path = None, **args) -> None:
-        if pretrained_path is not None:
-            self = LogisticRegression.load_from_checkpoint(pretrained_path, input_dim=input_dim, optimizer_args=optimizer_args)
-            return
         super().__init__()
         self._optimizer_args = optimizer_args
         self.lr = nn.Sequential(
@@ -132,6 +129,10 @@ class LogisticRegression(pl.LightningModule):
         self.save_hyperparameters()
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCELoss()
+        
+        if pretrained_path is not None:
+            self = LogisticRegression.load_from_checkpoint(pretrained_path, input_dim=input_dim, optimizer_args=optimizer_args)
+            return
 
     def forward(self, input: torch.tensor) -> torch.tensor:
         out = self.lr(input)

@@ -17,7 +17,7 @@ training:
   seed: 4000
   dataset: 
     name: ToxicityLevelDataset
-    data_path: "data/filtered.tsv"
+    data_path: "data/train.tsv"
     verbose: true
   dataloader:
     batch_size: 64

@@ -39,59 +39,6 @@ class CSVDataset(Dataset):
         return self._data[index]
 
 
-class _ToxicityLevelDataset(CSVDataset):
-    def __init__(self, data_path: str, nltk_args, word2vec_args, verbose=True) -> None:
-        """Dataset for predicting toxicity level of sentence for filtered.tsv data.
-
-        Args:
-            data_path (str): path to .tsv data
-            verbose (bool, optional): if True print some logs and tqdm. Defaults to True.
-        """
-        super().__init__(data_path)
-        self._toxic_level = []
-        self._texts = []
-        for data_row in self._data:
-            self._toxic_level.append(float(data_row[3]))
-            self._texts.append(data_row[0])
-            self._toxic_level.append(float(data_row[4]))
-            self._texts.append(data_row[1])
-
-        self.tokenizer = NLTK_tokenizer(**nltk_args)
-        self._tokenized_texts = self.tokenizer.forward(self._texts, verbose=verbose)
-
-        if verbose:
-            print("Begin training of Word2vec")
-        self.to_emb = get_word2vec(self._tokenized_texts, args=word2vec_args)
-        if verbose:
-            print("Done training Word2vec")
-        # for sentence in tokenized_texts:
-        #     self._emb_texts.append(list(map(lambda x: self.to_emb.wv[x], sentence)))
-
-    def __getitem__(self, index):
-        texts_emb = [self.to_emb.wv[x] for x in self._tokenized_texts[index]]
-        return texts_emb, self._toxic_level[index]
-
-    def __len__(self):
-        return len(self._toxic_level)
-
-    def save(self, path) -> None:
-        data2save = (self._tokenized_texts, self._toxic_level)
-        with open(path + "/texts.obj", "wb") as f:
-            pickle.dump(data2save, f)
-        self.to_emb.save(path + "/word2vec.model")
-
-    @classmethod
-    def load(cls, path) -> None:
-        self = cls.__new__(cls)
-        with open(path + "/texts.obj", "rb") as f:
-            self._tokenized_texts, self._toxic_level = pickle.load(f)
-        self.to_emb = gensim.models.Word2Vec.load(path + "/word2vec.model")
-        return self
-
-
-
-
-
 class ToxicityLevelDataset(CSVDataset):
     def __init__(
         self, data_path: str, tokenizer: Tokenizer, text2vector: Text2Vector, verbose=True
@@ -123,6 +70,12 @@ class ToxicityLevelDataset(CSVDataset):
     def __getitem__(self, index):
         vector_form = self.text2vec.forward(self._tokenized_texts[index])
         return vector_form, self._toxic_level[index]
+    
+
+class SimpleParaphrasingDataset(CSVDataset):
+    def __getitem__(self, index):
+        return self._data[index][0], self._data[index][1]
+
 
 
 class TransfosrmerDataset(CSVDataset):
@@ -135,6 +88,10 @@ class TransfosrmerDataset(CSVDataset):
             self._texts.append(data_row[0])
             self.toxic_level.append(float(data_row[4]))
             self._texts.append(data_row[1])
+
+
+        # if binary:
+        #     self.toxic_level = list(map(lambda x: x > 0.5))
         
         self.tokenizers = tokenizer
 

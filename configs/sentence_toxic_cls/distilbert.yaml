@@ -15,7 +15,7 @@ training:
   seed: 4000
   dataset: 
     name: TransfosrmerDataset
-    data_path: "data/filtered.tsv"
+    data_path: "data/train.tsv"
   dataloader:
     batch_size: 512
     num_workers: 7

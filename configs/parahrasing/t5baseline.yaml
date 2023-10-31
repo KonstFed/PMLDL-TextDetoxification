@@ -2,15 +2,15 @@ preprocessing:
   tokenizer:
     name: HugginFaceTokenizer
     model_name: distilbert-base-uncased
-    # padding: max_length
-    # max_length: 32
+    padding: max_length
+    max_length: 32
     truncation: True
 model:
   name: DistilBert
-  pretrained_path: models/toxicity_cl/bert
   num_labels: 1
   model_name: distilbert-base-uncased
 training:
+  save_path: "models/toxicity_cl/bert"
   train_val_test_ratio: [0.7, 0.1, 0.2]
   seed: 4000
   dataset: 

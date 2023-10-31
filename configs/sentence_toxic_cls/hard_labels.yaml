@@ -17,7 +17,7 @@ training:
   seed: 4000
   dataset: 
     name: BinaryToxicityLevelDataset
-    data_path: "data/filtered.tsv"
+    data_path: "data/train.tsv"
     verbose: true
     threshold: 0.5
   dataloader:
