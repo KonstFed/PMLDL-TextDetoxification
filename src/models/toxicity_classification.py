@@ -1,11 +1,12 @@
 from typing import Any
+
 from lightning.pytorch.utilities.types import STEP_OUTPUT
+import lightning.pytorch as pl
 import torch
 from torch import nn
 import numpy as np
 from sklearn.metrics import accuracy_score
-
-import lightning.pytorch as pl
+from transformers import AdamW, AutoModelForSequenceClassification, AutoConfig
 
 
 class SimpleToxicClassification(pl.LightningModule):
@@ -44,7 +45,9 @@ class SimpleToxicClassification(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         loss = self._count_loss(batch)
-        self.log("train_loss", loss, on_epoch=True, prog_bar=True, batch_size=len(batch))
+        self.log(
+            "train_loss", loss, on_epoch=True, prog_bar=True, batch_size=len(batch)
+        )
         return loss
 
     def validation_step(self, batch, batch_idx) -> STEP_OUTPUT:
@@ -69,7 +72,6 @@ class SimpleToxicClassification(pl.LightningModule):
             prog_bar=True,
             logger=True,
             batch_size=len(batch),
-
         )
         self.log(
             "val loss",
@@ -169,3 +171,53 @@ class LogisticRegression(pl.LightningModule):
         inp_vectors = torch.cat(inp_vectors, dim=1).float().permute(1, 0)
         labels = torch.tensor(labels, dtype=torch.float)
         return inp_vectors, labels.view(*labels.shape, 1)
+
+
+class DistilBert(pl.LightningModule):
+    def __init__(self, model_name: str, optimizer_args, num_labels, **args) -> None:
+        super().__init__()
+        self.save_hyperparameters()
+        self._optimizer_args = optimizer_args
+        # self.transformer_config = AutoConfig.from_pretrained(model_name, num_labels=1)
+        self.model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=num_labels)
+
+    def forward(self, input) -> torch.tensor:
+        # print(input)
+        return self.model(**input)
+
+    def training_step(self, batch):
+        outputs = self.forward(batch)
+        loss = outputs[0]
+        self.log("train loss", loss, on_step=True, on_epoch=True, prog_bar=True)
+        return loss
+
+    def validation_step(self, batch):
+        outputs = self.forward(batch)
+        loss = outputs[0]
+        self.log("val loss", loss, on_epoch=True, prog_bar=True)
+        return loss
+
+    def test_step(self, batch):
+        outputs = self.forward(batch)
+        loss = outputs[0]
+        return loss
+
+    def configure_optimizers(self):
+        optimizer = AdamW(self.model.parameters(), **self._optimizer_args)
+        return optimizer
+
+    @staticmethod
+    def collate_batch(batch):
+        out_ids = []
+        out_mask = []
+        out_labels = []
+        for item in batch:
+            input_ids, mask, labels = item["input_ids"], item["attention_mask"], item["labels"]
+            out_ids.append(input_ids)
+            out_mask.append(mask)
+            out_labels.append(labels)
+        out_ids = torch.stack(out_ids, dim=0)
+        out_mask = torch.stack(out_mask, dim=0)
+        out_labels = torch.tensor(out_labels).float()
+        # print("done", out_ids.shape, out_mask.shape, out_labels.shape)
+        return {"input_ids": out_ids, "attention_mask": out_mask, "labels": out_labels}

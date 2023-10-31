@@ -1,6 +1,7 @@
 from multiprocessing import Pool
 import re
 
+from transformers import AutoTokenizer
 import nltk
 from nltk.stem.porter import PorterStemmer
 from nltk.corpus import stopwords
@@ -11,11 +12,7 @@ from .utils import Cached
 
 # from transformers import AutoTokenizer
 class Tokenizer(Cached):
-    def forward(
-        self,
-        data: list[str],
-        verbose=True
-    ) -> list[list[str]]:
+    def forward(self, data: list[str], verbose=True) -> list[list[str]]:
         """Tokenize list of sentence
 
         Args:
@@ -27,6 +24,14 @@ class Tokenizer(Cached):
         """
 
 
+class HugginFaceTokenizer(Tokenizer):
+    def __init__(self, model_name: str, **tokenizer_args) -> None:
+        self.tokenizer_args = tokenizer_args 
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+
+    def forward(self, data: list[str]) -> list[list[str]]:
+        return self.tokenizer(data, **self.tokenizer_args)
+    
 def _download_if_non_existent(res_path, res_name):
     try:
         nltk.data.find(res_path)

@@ -3,13 +3,14 @@ import csv
 import pickle
 from collections import Counter
 
+import torch
 import gensim
 import numpy as np
 from tqdm import tqdm
-
 from torch.utils.data import Dataset
-from preprocessing.tokenizers import NLTK_tokenizer, Tokenizer
-from preprocessing.vocabulars import get_word2vec, Text2Vector
+
+from ..preprocessing.tokenizers import NLTK_tokenizer, Tokenizer
+from ..preprocessing.vocabulars import get_word2vec, Text2Vector
 
 
 class CSVDataset(Dataset):
@@ -88,9 +89,12 @@ class _ToxicityLevelDataset(CSVDataset):
         return self
 
 
+
+
+
 class ToxicityLevelDataset(CSVDataset):
     def __init__(
-        self, data_path: str, tokenizer: Tokenizer, text2vec: Text2Vector, verbose=True
+        self, data_path: str, tokenizer: Tokenizer, text2vector: Text2Vector, verbose=True
     ) -> None:
         super().__init__(data_path)
         _toxic_level = []
@@ -109,7 +113,7 @@ class ToxicityLevelDataset(CSVDataset):
                 self._toxic_level.append(_toxic_level[i])
                 self._tokenized_texts.append(texts[i])
 
-        self.text2vec = text2vec
+        self.text2vec = text2vector
         if not self.text2vec.ready:
             self.text2vec.build(self._tokenized_texts, self._toxic_level)
 
@@ -121,16 +125,39 @@ class ToxicityLevelDataset(CSVDataset):
         return vector_form, self._toxic_level[index]
 
 
+class TransfosrmerDataset(CSVDataset):
+    def __init__(self, data_path: str, tokenizer: Tokenizer) -> None:
+        super().__init__(data_path)
+        self.toxic_level = []
+        self._texts = []
+        for data_row in self._data:
+            self.toxic_level.append(float(data_row[3]))
+            self._texts.append(data_row[0])
+            self.toxic_level.append(float(data_row[4]))
+            self._texts.append(data_row[1])
+        
+        self.tokenizers = tokenizer
+
+    def __len__(self):
+        return len(self.toxic_level)
+
+    def __getitem__(self, index):
+        item = self.tokenizers.forward(self._texts[index])
+
+        item = {key: torch.tensor(val) for key, val in item.items()}
+        item["labels"] = self.toxic_level[index]
+        return item
+
 class BinaryToxicityLevelDataset(ToxicityLevelDataset):
     def __init__(
         self,
         data_path: str,
         tokenizer: Tokenizer,
-        text2vec: Text2Vector,
+        text2vector: Text2Vector,
         threshold: float,
         verbose=True,
     ) -> None:
-        super().__init__(data_path, tokenizer, text2vec, verbose)
+        super().__init__(data_path, tokenizer, text2vector, verbose)
         self.threshold = threshold
 
     def __getitem__(self, index):
@@ -138,12 +165,12 @@ class BinaryToxicityLevelDataset(ToxicityLevelDataset):
         return vector, int(toxic_level > self.threshold)
 
 
-def build_dataset(dataset_config: dict, tokenizer: Tokenizer, text2vec: Text2Vector):
+def build_dataset(dataset_config: dict, **preprocessing_args):
     dataset_params = {
         i: dataset_config[i] for i in dataset_config if i not in ["name", "save_path"]
     }
     dataset = eval(f"{dataset_config.name}")(
-        tokenizer=tokenizer, text2vec=text2vec, **dataset_params
+        **preprocessing_args, **dataset_params
     )
 
     return dataset
