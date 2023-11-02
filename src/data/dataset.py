@@ -41,7 +41,11 @@ class CSVDataset(Dataset):
 
 class ToxicityLevelDataset(CSVDataset):
     def __init__(
-        self, data_path: str, tokenizer: Tokenizer, text2vector: Text2Vector, verbose=True
+        self,
+        data_path: str,
+        tokenizer: Tokenizer,
+        text2vector: Text2Vector,
+        verbose=True,
     ) -> None:
         super().__init__(data_path)
         _toxic_level = []
@@ -70,12 +74,21 @@ class ToxicityLevelDataset(CSVDataset):
     def __getitem__(self, index):
         vector_form = self.text2vec.forward(self._tokenized_texts[index])
         return vector_form, self._toxic_level[index]
-    
+
 
 class SimpleParaphrasingDataset(CSVDataset):
-    def __getitem__(self, index):
-        return self._data[index][0], self._data[index][1]
+    def __init__(self, data_path: str, tokenizer: Tokenizer, prefix: str = "") -> None:
+        super().__init__(data_path)
+        self.prefix = prefix
+        self.tokenizer = tokenizer
 
+    def __getitem__(self, index):
+
+        ref_tokens = self.tokenizer.forward(self.prefix + self._data[index][0])
+        trn_tokens = self.tokenizer.forward(self.prefix + self._data[index][1])
+        # print(self._data[index][0], self._data[index][1])
+        # print(ref_tokens, trn_tokens)
+        return ref_tokens, trn_tokens
 
 
 class TransfosrmerDataset(CSVDataset):
@@ -89,10 +102,9 @@ class TransfosrmerDataset(CSVDataset):
             self.toxic_level.append(float(data_row[4]))
             self._texts.append(data_row[1])
 
-
         # if binary:
         #     self.toxic_level = list(map(lambda x: x > 0.5))
-        
+
         self.tokenizers = tokenizer
 
     def __len__(self):
@@ -104,6 +116,7 @@ class TransfosrmerDataset(CSVDataset):
         item = {key: torch.tensor(val) for key, val in item.items()}
         item["labels"] = self.toxic_level[index]
         return item
+
 
 class BinaryToxicityLevelDataset(ToxicityLevelDataset):
     def __init__(
@@ -126,9 +139,7 @@ def build_dataset(dataset_config: dict, **preprocessing_args):
     dataset_params = {
         i: dataset_config[i] for i in dataset_config if i not in ["name", "save_path"]
     }
-    dataset = eval(f"{dataset_config.name}")(
-        **preprocessing_args, **dataset_params
-    )
+    dataset = eval(f"{dataset_config.name}")(**preprocessing_args, **dataset_params)
 
     return dataset
 

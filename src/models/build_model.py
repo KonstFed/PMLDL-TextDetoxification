@@ -1,4 +1,5 @@
 from .toxicity_classification import *
+from .paraphrasing import *
 
 
 def build_model(model_config: dict, training_config: dict):

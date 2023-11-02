@@ -1,26 +1,25 @@
 preprocessing:
   tokenizer:
     name: HugginFaceTokenizer
-    model_name: distilbert-base-uncased
+    model_name: t5-small
     padding: max_length
-    max_length: 32
+    max_length: 128
     truncation: True
 model:
-  name: DistilBert
-  num_labels: 1
-  model_name: distilbert-base-uncased
+  name: T5model
+  model_name: t5-small
 training:
-  save_path: "models/toxicity_cl/bert"
-  train_val_test_ratio: [0.7, 0.1, 0.2]
+  save_path: "models/paraphrasing/t5"
+  train_val_test_ratio: [0.8, 0.1, 0.1]
   seed: 4000
   dataset: 
-    name: TransfosrmerDataset
-    data_path: "data/filtered.tsv"
+    name: SimpleParaphrasingDataset
+    data_path: "data/train.tsv"
   dataloader:
-    batch_size: 512
-    num_workers: 7
+    batch_size: 2
+    num_workers: 1
   optimizer_args:
-    lr: 0.00005
+    lr: 0.0001
   trainer_args:
     max_epochs: 2
     default_root_dir: "models/toxicity_bert"

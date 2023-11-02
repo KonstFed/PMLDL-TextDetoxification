@@ -42,7 +42,6 @@ def train(config):
     dataset = build_dataset(config.training.dataset, **preprocessing)
     # dataset.save("models/preprocessing/toxic_dataset")
 
-
     train_data, val_data, test_data = random_split(
         dataset, config.training.train_val_test_ratio
     )
@@ -68,7 +67,6 @@ def train(config):
         callbacks=[EarlyStopping(monitor="val loss", mode="min")],
         **config.training.trainer_args
     )
-    print(train_data[0])
     trainer.fit(model=model, train_dataloaders=train_loader, val_dataloaders=val_loader)
     trainer.test(model, dataloaders=test_loader)
 
