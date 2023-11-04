@@ -71,7 +71,7 @@ class ToxicClassificationPipeline:
             if norm != 0:
                 input_vector /= norm
             with torch.no_grad():
-                input_vector = torch.tensor(input_vector, dtype=torch.float32)
+                input_vector = torch.tensor(input_vector, dtype=torch.float32).to(self.device)
                 result.append(self.model(input_vector).detach())
         if is_single:
             return result[0]

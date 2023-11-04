@@ -50,15 +50,17 @@ def get_args():
 def _text_similarity(reference: list[str], translation: list[str]):
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
     model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
-    ref_embs = model.encode(reference, show_progress_bar=True, device=device)
-    trn_embs = model.encode(translation, show_progress_bar=True, device=device)
+    ref_embs = model.encode(reference, show_progress_bar=True, device=device, convert_to_tensor=True)
+    trn_embs = model.encode(translation, show_progress_bar=True, device=device, convert_to_tensor=True)
     assert len(ref_embs) == len(trn_embs)
     result = []
     print("Computing semantic similarity")
+    print(ref_embs.shape)
     for i in trange(len(ref_embs)):
-        similarity = torch.nn.functional.cosine_similarity(ref_embs[i], trn_embs[i])
+        similarity = torch.nn.functional.cosine_similarity(ref_embs[i].view(1, -1), trn_embs[i].view(1, -1))
+        similarity = float(similarity.detach().cpu())
         result.append(similarity)
-
+    return result
 
 def _load_data(path) -> list[str]:
     texts = []
@@ -76,6 +78,9 @@ def _compute_toxicity(
     cls_pipeline = build_pipeline(toxic_cls_config)
     ref_result = cls_pipeline.forward_multiple(reference, batch_size=batch_size)
     trn_result = cls_pipeline.forward_multiple(translation, batch_size=batch_size)
+    ref_result = list(map(lambda x: float(x.detach()), ref_result))
+    trn_result = list(map(lambda x: float(x.detach()), trn_result))
+
     return ref_result, trn_result
 
 

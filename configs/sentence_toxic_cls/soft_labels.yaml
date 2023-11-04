@@ -9,7 +9,7 @@ preprocessing:
     size: 2000
     verbose: True
 model:
-  pretrained_path: models/toxicity_cl/best_soft.ckpt
+  pretrained_path: models/toxicity_cl/log_soft.ckpt
   name: LogisticRegression
   input_dim: 2000
 training:
@@ -26,6 +26,6 @@ training:
     name: torch.optim.Adam
 #     lr: 0.1
   trainer_args:
-    max_epochs: 3
-    default_root_dir: "models/toxicity_log_regr"
+    max_epochs: 1
+    default_root_dir: "models/logs/toxicity_log_regr_soft"
 
