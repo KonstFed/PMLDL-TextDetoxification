@@ -109,7 +109,7 @@ def test_transformer(
 ):
     _out_path = os.path.join(save_folder, "output.tsv")
 
-    _compute_metric(toxic_cls_config, _out_path)
+    _compute_metric(toxic_cls_config, _out_path, folder=save_folder)
     # pipeline = ParaphrasingTransformerPipeline(config)
     # with open(_out_path, "w", newline='') as file:
     #     writer = csv.writer(file, delimiter="\t")

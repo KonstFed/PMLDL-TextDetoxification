@@ -81,11 +81,24 @@ class ToxicClassificationPipeline:
 
 class BertPipeline:
     def __init__(self, config) -> None:
+        self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.tokenizer: Tokenizer = build_preprocessing(config.preprocessing)[
             "tokenizer"
         ]
         self.model = build_model(config.model, config.training)
+        self.model.to(self.device)
         self.model.eval()
+
+    def forward_multiple(self, input: list[str], batch_size: int):
+        result = []
+        with torch.no_grad():
+            for idx in trange(0, len(input), batch_size):
+                input_batch = input[idx: idx + batch_size]
+                out = self.tokenizer.forward(input_batch).to(self.device)
+                logits = self.model(out)["logits"]
+                prob = torch.nn.functional.sigmoid(logits).detach()
+                result += list(prob)
+        return result
 
     def forward(self, input: str) -> float:
         tokens = self.tokenizer.forward(input)
