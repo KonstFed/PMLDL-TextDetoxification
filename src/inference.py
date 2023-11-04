@@ -38,6 +38,7 @@ class ToxicClassificationPipeline:
         # self.text2vec = self.text2vec.load(config.preprocessing.text2vector.load_path)
         self.model = build_model(config.model, config.training)
         self.model.eval()
+     
 
     def forward(self, input: str) -> float:
         tokens = self.tokenizer.forward([input])[0]
@@ -68,6 +69,7 @@ class BertPipeline:
 
 class ParaphrasingTransformerPipeline:
     def __init__(self, config) -> None:
+        self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.tokenizer = AutoTokenizer.from_pretrained(config.model.model_name)
         self.model = AutoModelForSeq2SeqLM.from_pretrained(config.model.pretrained_path)
         self.config = config
@@ -76,10 +78,11 @@ class ParaphrasingTransformerPipeline:
             for k, v in config.preprocessing.tokenizer.items()
             if k not in ["name", "model_name"]
         }
+        self.model.to(self.device)
         self.model.eval()
 
     def forward(self, input: str) -> str:
-        tokens = self.tokenizer(input, return_tensors="pt", **self._tokenizer_args)
+        tokens = self.tokenizer(input, return_tensors="pt", **self._tokenizer_args).to(self.device)
         # tokens = {k: torch.tensor(v) for k, v in tokens.items()}
         out = self.model.generate(
             input_ids=tokens["input_ids"],
