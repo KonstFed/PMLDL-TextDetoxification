@@ -1,26 +1,28 @@
 preprocessing:
   tokenizer:
     name: HugginFaceTokenizer
-    model_name: t5-small
+    model_name: t5-base
     padding: max_length
-    max_length: 128
+    max_length: 32
     truncation: True
 model:
   name: T5model
-  model_name: t5-small
+  pretrained_path: models/paraphrasing/t5_base
+
+  model_name: t5-base
 training:
-  save_path: "models/paraphrasing/t5"
+#   save_path: "models/paraphrasing/t5_base"
   train_val_test_ratio: [0.8, 0.1, 0.1]
   seed: 4000
   dataset: 
     name: SimpleParaphrasingDataset
     data_path: "data/train.tsv"
   dataloader:
-    batch_size: 2
-    num_workers: 1
+    batch_size: 200
+    num_workers: 7
   optimizer_args:
-    lr: 0.0001
+    lr: 0.001
   trainer_args:
-    max_epochs: 2
+    max_epochs: 5
     default_root_dir: "models/toxicity_bert"
 
