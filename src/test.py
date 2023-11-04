@@ -50,17 +50,24 @@ def get_args():
 def _text_similarity(reference: list[str], translation: list[str]):
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
     model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
-    ref_embs = model.encode(reference, show_progress_bar=True, device=device, convert_to_tensor=True)
-    trn_embs = model.encode(translation, show_progress_bar=True, device=device, convert_to_tensor=True)
+    ref_embs = model.encode(
+        reference, show_progress_bar=True, device=device, convert_to_tensor=True
+    )
+    trn_embs = model.encode(
+        translation, show_progress_bar=True, device=device, convert_to_tensor=True
+    )
     assert len(ref_embs) == len(trn_embs)
     result = []
     print("Computing semantic similarity")
     print(ref_embs.shape)
     for i in trange(len(ref_embs)):
-        similarity = torch.nn.functional.cosine_similarity(ref_embs[i].view(1, -1), trn_embs[i].view(1, -1))
+        similarity = torch.nn.functional.cosine_similarity(
+            ref_embs[i].view(1, -1), trn_embs[i].view(1, -1)
+        )
         similarity = float(similarity.detach().cpu())
         result.append(similarity)
     return result
+
 
 def _load_data(path) -> list[str]:
     texts = []
@@ -84,7 +91,7 @@ def _compute_toxicity(
     return ref_result, trn_result
 
 
-def _compute_metric(toxic_cls_config, path: str, folder: str ="."):
+def _compute_metric(toxic_cls_config, path: str, folder: str = "."):
     references = []
     translations = []
     with open(path, "r") as file:
@@ -100,16 +107,33 @@ def _compute_metric(toxic_cls_config, path: str, folder: str ="."):
     _metric_path = os.path.join(folder, "metric.tsv")
     with open(_metric_path, "w") as file:
         writer = csv.writer(file, delimiter="\t")
-        writer.writerow(["reference", "translation", "similarity", "None", "ref_tox", "trn_tox"])
+        writer.writerow(
+            ["reference", "translation", "similarity", "None", "ref_tox", "trn_tox"]
+        )
         for i in range(len(similarities)):
-            writer.writerow((references[i], translations[i], similarities[i], "", ref_tox[i], trn_tox[i]))
+            writer.writerow(
+                (
+                    references[i],
+                    translations[i],
+                    similarities[i],
+                    "",
+                    ref_tox[i],
+                    trn_tox[i],
+                )
+            )
+
+    score = 0
+    for i in range(len(similarities)):
+        score += (ref_tox[i] - trn_tox[i]) * similarities[i]
+    score /= len(similarities)
+    return score
+
 
 def test_transformer(
     config, test_data: list[str], toxic_cls_config, save_folder: str, batch_size
 ):
     _out_path = os.path.join(save_folder, "output.tsv")
 
-    _compute_metric(toxic_cls_config, _out_path, folder=save_folder)
     # pipeline = ParaphrasingTransformerPipeline(config)
     # with open(_out_path, "w", newline='') as file:
     #     writer = csv.writer(file, delimiter="\t")
@@ -117,6 +141,9 @@ def test_transformer(
     #     for idx in trange(0, len(test_data), batch_size):
     #         output = pipeline.forward(test_data[idx: idx + batch_size])
     #         writer.writerows([(test_data[idx + i], output[i]) for i in range(len(output))])
+
+    score = _compute_metric(toxic_cls_config, _out_path, folder=save_folder)
+    print("Test score:", score)
 
 
 if __name__ == "__main__":
