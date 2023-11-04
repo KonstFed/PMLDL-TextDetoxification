@@ -134,13 +134,13 @@ def test_transformer(
 ):
     _out_path = os.path.join(save_folder, "output.tsv")
 
-    # pipeline = ParaphrasingTransformerPipeline(config)
-    # with open(_out_path, "w", newline='') as file:
-    #     writer = csv.writer(file, delimiter="\t")
-    #     writer.writerow(["reference", "translation"])
-    #     for idx in trange(0, len(test_data), batch_size):
-    #         output = pipeline.forward(test_data[idx: idx + batch_size])
-    #         writer.writerows([(test_data[idx + i], output[i]) for i in range(len(output))])
+    pipeline = ParaphrasingTransformerPipeline(config)
+    with open(_out_path, "w", newline='') as file:
+        writer = csv.writer(file, delimiter="\t")
+        writer.writerow(["reference", "translation"])
+        for idx in trange(0, len(test_data), batch_size):
+            output = pipeline.forward(test_data[idx: idx + batch_size])
+            writer.writerows([(test_data[idx + i], output[i]) for i in range(len(output))])
 
     score = _compute_metric(toxic_cls_config, _out_path, folder=save_folder)
     print("Test score:", score)
