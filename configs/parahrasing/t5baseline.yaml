@@ -7,8 +7,6 @@ preprocessing:
     truncation: True
 model:
   name: T5model
-  pretrained_path: models/paraphrasing/t5_base
-
   model_name: t5-base
 training:
 #   save_path: "models/paraphrasing/t5_base"

@@ -7,12 +7,12 @@ preprocessing:
     truncation: True
 model:
   name: T5model
-  pretrained_path: "./models/paraphrasing/t5base"
+  pretrained_path: "./models/paraphrasing/t5best"
   model_name: t5-base
 training:
   train_val_test_ratio: [0.8, 0.1, 0.1]
   seed: 4000
-  dataset: 
+  dataset:
     name: SimpleParaphrasingDataset
     data_path: "data/train.tsv"
     prefix: "Detoxify: "

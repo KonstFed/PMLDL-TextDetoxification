@@ -3,5 +3,6 @@ seaborn
 gensim
 nltk
 lightning
+scikit-learn
 addict
 sentence-transformers
