@@ -70,7 +70,7 @@ python3 -m src.inference -c configs/parahrasing/t5baseline_inference.yaml
 ## Train
 Example of usage is the same for both tasks.
 ```bash
-python3 -m src.train -c configs/sentence_toxic_cls/hard_labels.yaml
+python3 -m src.train -c configs/sentence_toxic_cls/hard_labels.yaml "I love cats"
 ```
 
 ## Test
