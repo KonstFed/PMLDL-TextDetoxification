@@ -14,6 +14,23 @@ For broad requirements use:
 pip3 install -r requirements.txt
 ```
 
+## Weights
+
+You can download weights from [here](https://disk.yandex.com/d/YIPCDBISwf6cwQ). There would be 3 archives:
+- parahrasing.zip: detoxification model itself
+- preprocessing.zip: preprocessing for logistic regression
+- toxicity_cl.zip: weights for logistic regression and DistilBert
+
+Extract all files to folder __models__
+
+final structure should be
+```bash
+models
+├── paraphrasing
+├── preprocessing
+└── toxicity_cl
+```
+
 ## Data
 
 To load data:
