@@ -64,7 +64,7 @@ For this task following configs works:
 ### Detoxification
 
 ```bash
-python3 -m src.inference -c configs/parahrasing/t5baseline_inference.yaml
+python3 -m src.inference -c configs/parahrasing/t5baseline_inference.yaml "I love cats"
 ```
 
 ## Train
